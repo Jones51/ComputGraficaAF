@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Babylon.js sample code</title>
+
+    <!-- Babylon.js -->
+    <script src="https://code.jquery.com/pep/0.4.2/pep.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/libktx.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var engine = null;
+        var scene = null;
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true }); };
+
+        var createScene = function () {
+            // meshes
+            var meshesTodas = [];
+
+            // Create the scene space
+            var scene = new BABYLON.Scene(engine);
+
+           
+
+            // Creates, angles, distances and targets the camera
+            var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, 0, 0), scene);
+
+            // This positions the camera
+            camera.setPosition(new BABYLON.Vector3(0, 0, -40));
+
+            // This attaches the camera to the canvas
+            camera.attachControl(canvas, true);
+
+            // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+            var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+
+            // Default intensity is 1. Let's dim the light a small amount
+            light.intensity = 0.7;
+
+            // Our built-in 'sphere' shape. Params: name, subdivs, size, scene
+            var sphere = BABYLON.Mesh.CreateSphere("sphere1", 4, 2, scene);
+
+            // Move the sphere upward 1/2 its height
+            sphere.position.y = 2;
+
+
+            // testing
+
+            var tabua = new BABYLON.Mesh(scene);
+            
+            var box01 = BABYLON.MeshBuilder.CreateBox("box01", {height: 1, width: 10});
+            box01.scaling.z = 8;
+            box01.scaling.x = 5;
+            box01.position.x = 8;
+            box01.position.y = -5;
+            box01.rotation.z = 6;
+
+            var lateral = box01.clone("lateral01");
+            lateral.scaling.z = 0.5;
+            lateral.scaling.y = 4;
+            lateral.position.z = 4;
+
+            var lateral02 = box01.clone("lateral01");
+            lateral02.scaling.z = 0.5;
+            lateral02.scaling.y = 4;
+            lateral02.position.z = -4;
+
+            scene.enablePhysics();
+
+            sphere.physicsImpostor = new BABYLON.PhysicsImpostor(sphere, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.9 }, scene);
+            box01.physicsImpostor = new BABYLON.PhysicsImpostor(box01, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+            lateral.physicsImpostor = new BABYLON.PhysicsImpostor(lateral, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+            lateral02.physicsImpostor = new BABYLON.PhysicsImpostor(lateral02, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+            sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0.5, 6, -1), sphere.getAbsolutePosition());
+
+            tabua.addChild(box01);
+            tabua.addChild(lateral);
+            tabua.addChild(lateral02);
+
+            var tabua02 = tabua.clone("tabua02")
+
+            tabua02.physicsImpostor = new BABYLON.PhysicsImpostor(tabua02, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+            tabua02.position.y = -25;
+            tabua02.rotation.y = 20;
+            tabua02.position.x = 15;
+
+
+            return scene;
+        }
+
+        function animationPiano(box){
+            const frameRate = 2;
+
+            const xSlide = new BABYLON.Animation("xSlide", "position.y", frameRate, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+
+            const keyFrames = []; 
+
+            keyFrames.push({
+                frame: 0,
+                value: 0
+            });
+
+            keyFrames.push({
+                frame: frameRate,
+                value: -0.25
+            });
+
+            keyFrames.push({
+                frame: 0.25 * frameRate,
+                value: 0.25
+            });
+
+            xSlide.setKeys(keyFrames);
+
+            box.animations.push(xSlide);
+
+            const myAnim = scene.beginAnimation(box, 0, 2 * frameRate, true);
+
+            setTimeout(() => {myAnim.stop()}, 100);
+        }
+
+        function displayOneMesh(mostrar, listaMeshes){
+            for (var j = 0; j< 8; j ++){
+                listaMeshes[j].setEnabled(false);
+            }
+            mostrar.setEnabled(true);
+        }
+
+        function centro(posicao, quantidade, niveis, troca){
+            var newMesh = new BABYLON.Mesh(scene);
+
+            var redMaterial = new BABYLON.StandardMaterial("RedMaterial", scene);
+            redMaterial.diffuseTexture = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/7/74/RedDwarfNASA.jpg", scene);
+            redMaterial.diffuseTexture.hasAlpha = true;
+            redMaterial.backFaceCulling = false;
+
+            var yellowMaterial = new BABYLON.StandardMaterial("yellowMaterial", scene);
+            yellowMaterial.diffuseTexture = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/a/a6/Lapis_lazuli_block.jpg", scene);
+            yellowMaterial.diffuseTexture.hasAlpha = true;
+            yellowMaterial.backFaceCulling = false;
+
+
+            var auxiliar = 0;
+
+            for (var j = 0; j< quantidade; j ++){
+                var esfera = BABYLON.MeshBuilder.CreateSphere("sphere", { size: 0.75 }, scene);
+                esfera.material = redMaterial;
+                esfera.position.x = posicao;
+                esfera.position.z = auxiliar;
+                esfera.position.y = niveis;
+                newMesh.addChild(esfera);
+                
+                if (j % 2 == 0){
+                    esfera.material = redMaterial;
+                }
+                else{
+                    esfera.material = yellowMaterial;
+                }
+                auxiliar+=1;
+            }
+        
+
+            return newMesh;
+        }
+
+        function circle(posicao, rotacao, raio){
+            var newMesh = new BABYLON.Mesh(scene);
+            var altRadios = 2;
+            var radius = raio;
+            for (var j = 0; j<1; j ++){
+                //Array of points to construct a spiral with lines
+                var myPoints = [];
+
+                var deltaTheta = 0.1;
+
+                var theta = 0;
+                var Y = 0;
+                for (var i = 0; i<100; i++) {
+                    myPoints.push(new BABYLON.Vector3(radius * Math.cos(theta), Y, radius * Math.sin(theta)));
+                    theta += deltaTheta;
+                    //Y += deltaY
+                }
+
+                //Create lines 
+                var lines = BABYLON.MeshBuilder.CreateLines("lines", {points: myPoints}, scene);
+
+                var radius = radius - altRadios;
+
+                newMesh.addChild(lines);
+
+                newMesh.position.x = posicao;
+                newMesh.rotation.x = rotacao;
+            }
+            //newMesh.material = redMaterial;
+            return newMesh;
+        }
+
+        function circle2(){
+            var newMesh = new BABYLON.Mesh(scene);
+            var altRadios = 2;
+            var radius = 10;
+            for (var j = 0; j<1; j ++){
+                //Array of points to construct a spiral with lines
+                var myPoints = [];
+
+                var deltaTheta = 0.1;
+
+                var theta = 0;
+                var Y = 0;
+                for (var i = 0; i<100; i++) {
+                    myPoints.push(new BABYLON.Vector3(radius * Math.cos(theta), Y, radius * Math.sin(theta)));
+                    theta += deltaTheta;
+                    //Y += deltaY
+                }
+
+                //Create lines 
+                var lines = BABYLON.MeshBuilder.CreateLines("lines", {points: myPoints}, scene);
+                
+                var radius = radius - altRadios;
+
+                newMesh.addChild(lines);
+            }
+            //newMesh.material = redMaterial;
+            return newMesh;
+        }
+
+        function spheres(posicao, rotacao, raio, quantidade, distancia){
+            // Materials
+            var blueMaterial = new BABYLON.StandardMaterial("blueMaterial", scene);
+            blueMaterial.diffuseTexture = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/4/49/Plagiomnium_affine_laminazellen.jpeg", scene);
+            blueMaterial.diffuseTexture.hasAlpha = true;
+            blueMaterial.backFaceCulling = false;
+            
+
+            var newMesh = new BABYLON.Mesh("star", scene);
+
+            var circle_01 = circle();
+            newMesh.addChild(circle_01);
+            
+            radius = raio;
+            theta = 0;
+            for (i =0 ; i< quantidade; i ++){
+                var box = BABYLON.MeshBuilder.CreateSphere("sphere", { size: 0.75 }, scene);
+                box.id = "box";
+                box.position.x = radius * Math.cos(theta);
+                box.position.z = radius * Math.sin(theta);
+                newMesh.addChild(box);
+                theta += distancia;
+
+                box.material = blueMaterial;
+            }
+
+            newMesh.position.x = posicao;
+            
+            if(rotacao == Math.PI/2){
+                newMesh.rotation.z = rotacao;
+            }
+            else{
+                newMesh.rotation.x = rotacao;
+                newMesh.id = "star2";
+            }
+            
+
+            return newMesh;
+        }
+
+        function boxes(){
+            // Materials
+            var redMaterial = new BABYLON.StandardMaterial("RedMaterial", scene);
+            var blueMaterial = new BABYLON.StandardMaterial("RedMaterial", scene);
+            var purpleMaterial = new BABYLON.StandardMaterial("RedMaterial", scene);
+            var oneMaterial = new BABYLON.StandardMaterial("oneMaterial", scene);
+            var twoMaterial = new BABYLON.StandardMaterial("twoMaterial", scene);
+            var threeMaterial = new BABYLON.StandardMaterial("threeMaterial", scene);
+            redMaterial.diffuseColor = new BABYLON.Color3(1,0,0);
+            blueMaterial.diffuseColor = new BABYLON.Color3(0,1,1);
+            purpleMaterial.diffuseColor = new BABYLON.Color3(1,0,1);
+            oneMaterial.specularColor = new BABYLON.Color3(1, 1, 0);
+            twoMaterial.emissiveColor = new BABYLON.Color3(0, 0, 1);
+            threeMaterial.ambientColor = new BABYLON.Color3(0.23, 0.98, 0.53);
+
+
+            var newMesh = new BABYLON.Mesh("star", scene);
+
+            var circle_01 = circle();
+            newMesh.addChild(circle_01);
+            
+            radius = 10;
+            theta = 0;
+            for (i =0 ; i< 1; i ++){
+                var box = BABYLON.MeshBuilder.CreateSphere("sphere", { size: 0.75 }, scene);
+                box.id = "box";
+                box.position.x = radius * Math.cos(theta);
+                box.position.z = radius * Math.sin(theta);
+                newMesh.addChild(box);
+                theta += 0.1;
+
+                box.material = blueMaterial;
+            }
+
+            radius = 8;
+            theta = 0;
+            for (i =0 ; i< 0; i ++){
+                var box = BABYLON.MeshBuilder.CreateBox("box2", { size: 0.75 }, scene);
+                box.id = "box2";
+                box.scaling = new BABYLON.Vector3(2, 2, 2);
+                box.position.x = radius * Math.cos(theta);
+                box.position.z = radius * Math.sin(theta);
+                newMesh.addChild(box);
+                theta += 0.3;
+
+                if (i % 2 == 0){
+                    box.material = oneMaterial;
+                }
+                else{
+                    box.material = purpleMaterial;
+                }
+            }
+
+            radius = 6;
+            theta = 0;
+            for (i =0 ; i< 0; i ++){
+                var box = BABYLON.MeshBuilder.CreateBox("box2", { size: 0.75 }, scene);
+                box.material = twoMaterial;
+                box.id = "box3";
+                box.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
+                box.position.x = radius * Math.cos(theta);
+                box.position.z = radius * Math.sin(theta);
+                newMesh.addChild(box);
+                theta += 0.3;
+            }
+
+
+            return newMesh;
+        }
+
+        function createTree() {
+
+            var incY = -4;
+            var scale = 1;
+            const LEN = 10;
+
+            var newMesh = new BABYLON.Mesh("tree", scene);
+
+            var myPoints = [
+                new BABYLON.Vector3(0, incY, 0),
+                new BABYLON.Vector3(0, incY + LEN, 0)
+
+            ];
+
+            var line = BABYLON.MeshBuilder.CreateLines("lines", { points: myPoints }, scene);
+            newMesh.addChild(line);
+
+            for (var i = 0; i < LEN; i++) {
+                var star = createStar();
+                star.position.y = incY;
+                star.scaling = new BABYLON.Vector3(scale, scale, scale);
+                scale -= 0.1;
+                incY += 1;
+                newMesh.addChild(star);
+            }
+
+            return newMesh;
+        }
+
+        function createStar() {
+
+            var angle = 0;
+            var incAngle = Math.PI / 4;
+            var radius = 3;
+            var newMesh = new BABYLON.Mesh("star", scene);
+
+            for (var i = 0; i < 12; i++) {
+
+                var x = Math.cos(angle) * radius;
+                var z = Math.sin(angle) * radius;
+                angle = angle + incAngle;
+
+                var box = BABYLON.MeshBuilder.CreateBox("box", { size: 0.75 }, scene);
+                box.id = "box";
+                var myPoints = [
+                    new BABYLON.Vector3(0, 0, 0),
+                    new BABYLON.Vector3(x, 0, z),
+
+                ];
+                var line = BABYLON.MeshBuilder.CreateLines("lines", { points: myPoints }, scene);
+
+                box.position.x = x;
+                box.position.z = z;
+                box.rotation.y = angle;
+
+                newMesh.addChild(box);
+                newMesh.addChild(line);
+            }
+
+            return newMesh;
+
+        }
+
+        function loop() {
+
+            var meshes = scene.getMeshesByID("star");
+
+            var inc = 1;
+            meshes.forEach(function (mesh) {
+                mesh.rotation.z -= (0.01 * inc);
+                inc = inc * -1;
+            });
+
+            var meshes = scene.getMeshesByID("star2");
+
+            var inc = 1;
+            meshes.forEach(function (mesh) {
+                mesh.rotation.y += (0.01 * inc);
+                inc = inc * -1;
+            });
+        };
+
+
+
+        engine = createDefaultEngine();
+        if (!engine) throw 'engine should not be null.';
+        scene = createScene();
+
+        engine.runRenderLoop(function () {
+            if (scene) {
+                loop();
+                scene.render();
+
+            }
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>
