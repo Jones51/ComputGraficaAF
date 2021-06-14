@@ -58,12 +58,11 @@
             var scene = new BABYLON.Scene(engine);
 
            
-
-            // Creates, angles, distances and targets the camera
-            var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, 0, 0), scene);
+           // Creates, angles, distances and targets the camera
+            var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, -50, 0), scene);
 
             // This positions the camera
-            camera.setPosition(new BABYLON.Vector3(0, 0, -40));
+            camera.setPosition(new BABYLON.Vector3(0, 0, -400));
 
             // This attaches the camera to the canvas
             camera.attachControl(canvas, true);
@@ -74,8 +73,34 @@
             // Default intensity is 1. Let's dim the light a small amount
             light.intensity = 0.7;
 
+            //Materials
+            var wood = new BABYLON.StandardMaterial("red", scene);
+            wood.diffuseTexture = new BABYLON.Texture("textures/wood.jpg", scene);
+            wood.diffuseTexture.hasAlpha = true;
+            wood.backFaceCulling = false;
+
+            var redMaterial = new BABYLON.StandardMaterial("RedMaterial", scene);
+            redMaterial.diffuseTexture = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/7/74/RedDwarfNASA.jpg", scene);
+            redMaterial.diffuseTexture.hasAlpha = true;
+            redMaterial.backFaceCulling = false;
+
+            var yellowMaterial = new BABYLON.StandardMaterial("yellowMaterial", scene);
+            yellowMaterial.diffuseTexture = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/a/a6/Lapis_lazuli_block.jpg", scene);
+            yellowMaterial.diffuseTexture.hasAlpha = true;
+            yellowMaterial.backFaceCulling = false;
+
+            //sounds
+            var power_sound = new BABYLON.Sound("power_sound", "sounds/power_final.mp3", scene);
+
+            //Particles
+            const particleSystem = new BABYLON.ParticleSystem("particles", 4000);
+            particleSystem.particleTexture = new BABYLON.Texture("https://cdn.jsdelivr.net/gh/capucat/blendermodels/solidStar.png");
+            particleSystem.emitter = new BABYLON.Vector3(5, 5, 5);
+
             // Our built-in 'sphere' shape. Params: name, subdivs, size, scene
-            var sphere = BABYLON.Mesh.CreateSphere("sphere1", 4, 2, scene);
+            var sphere = BABYLON.Mesh.CreateSphere("sphere", 4, 2, scene);
+            sphere.material = yellowMaterial;
+            particleSystem.emitter = sphere;
 
             // Move the sphere upward 1/2 its height
             sphere.position.y = 2;
@@ -91,20 +116,21 @@
             box01.position.x = 8;
             box01.position.y = -5;
             box01.rotation.z = 6;
+            box01.material = wood;
 
             var lateral = box01.clone("lateral01");
-            lateral.scaling.z = 0.5;
-            lateral.scaling.y = 4;
-            lateral.position.z = 4;
+            lateral.scaling.z = 2;
+            lateral.scaling.y = 6;
+            lateral.position.z = 5;
 
             var lateral02 = box01.clone("lateral01");
-            lateral02.scaling.z = 0.5;
-            lateral02.scaling.y = 4;
+            lateral02.scaling.z = 2;
+            lateral02.scaling.y = 6;
             lateral02.position.z = -4;
 
             scene.enablePhysics();
 
-            sphere.physicsImpostor = new BABYLON.PhysicsImpostor(sphere, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.9 }, scene);
+            sphere.physicsImpostor = new BABYLON.PhysicsImpostor(sphere, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 40, restitution: 0.2 }, scene);
             box01.physicsImpostor = new BABYLON.PhysicsImpostor(box01, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
             lateral.physicsImpostor = new BABYLON.PhysicsImpostor(lateral, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
             lateral02.physicsImpostor = new BABYLON.PhysicsImpostor(lateral02, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
@@ -115,13 +141,269 @@
             tabua.addChild(lateral);
             tabua.addChild(lateral02);
 
-            var tabua02 = tabua.clone("tabua02")
-
+            //------------tabua02----------------------
+            var tabua02 = BABYLON.MeshBuilder.CreateBox("tabua02", {height: 1, width: 10});
+            tabua02.scaling.z = 8;
+            tabua02.scaling.x = 5;
+            tabua02.position.x = 50;
+            tabua02.position.y = -20;
+            tabua02.rotation.z = 19.1;
             tabua02.physicsImpostor = new BABYLON.PhysicsImpostor(tabua02, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+            tabua02.material = wood;
 
-            tabua02.position.y = -25;
-            tabua02.rotation.y = 20;
-            tabua02.position.x = 15;
+
+            //------------tabua03----------------------
+            var tabua03 = BABYLON.MeshBuilder.CreateBox("tabua03", {height: 1, width: 10});
+            tabua03.scaling.z = 3;
+            tabua03.scaling.x = 5;
+            tabua03.position.x = 20;
+            tabua03.position.y = -30;
+            tabua03.rotation.z = 0;
+            tabua03.material = redMaterial;
+      
+
+            //Animação Tabua03
+            //Animate the Wheels
+            const animWheel = new BABYLON.Animation("wheelAnimation", "rotation.y", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const wheelKeys = []; 
+            //At the animation key 0, the value of rotation.y is 0
+            wheelKeys.push({
+                frame: 0,
+                value: 0
+            });
+            //At the animation key 30, (after 1 sec since animation fps = 30) the value of rotation.y is 2PI for a complete rotation
+            wheelKeys.push({
+                frame: 30,
+                value: 2 * Math.PI
+            });
+            //set the keys
+            animWheel.setKeys(wheelKeys);
+            //Link this animation to a wheel
+            tabua03.animations = [];
+            tabua03.animations.push(animWheel);
+            scene.beginAnimation(tabua03, 0, 30, true);
+
+            sphere.checkCollisions = true;
+            tabua03.checkCollisions = true;
+
+            //trigger
+            sphere.actionManager = new BABYLON.ActionManager(scene);
+
+            sphere.actionManager.registerAction(new BABYLON.SetValueAction(
+            { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: tabua03 },
+            sphere, "scaling", new BABYLON.Vector3(1.5, 1.5, 1.5))).then(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function() {power_sound.play()}))
+
+            sphere.actionManager.registerAction(new BABYLON.SetValueAction(
+            { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: tabua03 },
+            sphere, "Particulas", particleSystem.start())).then(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function() {myParticleSystem.targetStopDuration = 5}));
+ 
+            
+            //------------tabua04----------------------
+            var tabua04 = tabua.clone("tabua04")
+            tabua04.position.y = -45;
+            tabua04.rotation.z = 29.1;
+            tabua04.position.x = 0;
+            tabua04.physicsImpostor = new BABYLON.PhysicsImpostor(tabua04, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+
+
+            //------------tabua05----------------------
+            var tabua05 = tabua02.clone("tabua05")
+            tabua05.position.y = -60;
+            var physicsViewer = new BABYLON.Debug.PhysicsViewer();
+       
+
+            //------------tabua06----------------------
+            var tabua06 = BABYLON.MeshBuilder.CreateBox("tabua06", {height: 1, width: 10});
+            tabua06.scaling.z = 3;
+            tabua06.scaling.x = 5;
+            tabua06.position.x = 20;
+            tabua06.position.y = -70;
+            tabua06.rotation.z = 0;
+            tabua06.material = redMaterial;
+
+            //Animação Tabua06
+            const frameRate = 10;
+            const xSlide = new BABYLON.Animation("xSlide", "position.z", frameRate, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const keyFrames = []; 
+            keyFrames.push({
+                frame: 0,
+                value: 15
+            });
+
+            keyFrames.push({
+                frame: frameRate,
+                value: -15
+            });
+
+            keyFrames.push({
+                frame: 15 * frameRate,
+                value: 15
+            });
+            xSlide.setKeys(keyFrames);
+            tabua06.animations.push(xSlide);
+            scene.beginAnimation(tabua06, 0, 20 * frameRate, true);
+
+
+            //trigger02
+            sphere.actionManager.registerAction(new BABYLON.SetValueAction(
+            { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: tabua06 },
+            sphere, "scaling", new BABYLON.Vector3(1.75, 1.75, 1.75))).then(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function() {power_sound.play()}))
+
+            //------------tabua07----------------------
+            var tabua07 = BABYLON.MeshBuilder.CreateBox("tabua07", {height: 1, width: 10});
+            tabua07.scaling.z = 8;
+            tabua07.scaling.x = 5;
+            tabua07.position.x = -8;
+            tabua07.position.y = -80;
+            tabua07.rotation.z = 6;
+            tabua07.material = wood;
+
+            tabua07.physicsImpostor = new BABYLON.PhysicsImpostor(tabua07, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+            //------------tabua08----------------------
+            var tabua08 = tabua02.clone("tabua08")
+            tabua08.position.y = -95;
+            tabua08.position.x = 30;
+
+            //------------tabua09----------------------
+            var tabua09 = BABYLON.MeshBuilder.CreateBox("tabua09", {height: 1, width: 10});
+            tabua09.scaling.z = 3;
+            tabua09.scaling.x = 5;
+            tabua09.position.x = 20;
+            tabua09.position.y = -90;
+            tabua09.rotation.z = 0;
+            tabua09.material = redMaterial;
+
+            //Animação Tabua09
+            const frameRate2 = 10;
+            const xSlide02 = new BABYLON.Animation("xSlide02", "position.x", frameRate2, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const keyFrames2 = []; 
+            keyFrames2.push({
+                frame: 0,
+                value: 15
+            });
+
+            keyFrames2.push({
+                frame: frameRate,
+                value: -15
+            });
+
+            keyFrames2.push({
+                frame: 15 * frameRate,
+                value: 15
+            });
+            xSlide02.setKeys(keyFrames2);
+            tabua09.animations.push(xSlide02);
+            scene.beginAnimation(tabua09, 0, 20 * frameRate, true);
+
+            //trigger03
+            sphere.actionManager.registerAction(new BABYLON.SetValueAction(
+            { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: tabua09 },
+            sphere, "scaling", new BABYLON.Vector3(2.00, 2.00, 2.00))).then(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function() {power_sound.play()}))
+
+            //------------tabua10----------------------
+            var tabua10 = BABYLON.MeshBuilder.CreateBox("tabua10", {height: 1, width: 10});
+            tabua10.scaling.z = 8;
+            tabua10.scaling.x = 5;
+            tabua10.position.x = -8;
+            tabua10.position.y = -110;
+            tabua10.rotation.z = 6;
+            tabua10.material = wood;
+
+            tabua10.physicsImpostor = new BABYLON.PhysicsImpostor(tabua10, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+            //------------tabua11----------------------
+            var tabua11 = BABYLON.MeshBuilder.CreateBox("tabua11", {height: 1, width: 10});
+            tabua11.scaling.z = 3;
+            tabua11.scaling.x = 5;
+            tabua11.position.x = 20;
+            tabua11.position.y = -125;
+            tabua11.rotation.z = 0;
+            tabua11.material = redMaterial;
+      
+            //Animação Tabua11
+            //Animate the Wheels
+            const animWheel02 = new BABYLON.Animation("wheelAnimation02", "rotation.y", 5, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const wheelKeys02 = []; 
+            //At the animation key 0, the value of rotation.y is 0
+            wheelKeys02.push({
+                frame: 0,
+                value: 0
+            });
+            //At the animation key 30, (after 1 sec since animation fps = 30) the value of rotation.y is 2PI for a complete rotation
+            wheelKeys02.push({
+                frame: 5,
+                value: 3 * Math.PI
+            });
+            //set the keys
+            animWheel02.setKeys(wheelKeys);
+            //Link this animation to a wheel
+            tabua11.animations = [];
+            tabua11.animations.push(animWheel02);
+            scene.beginAnimation(tabua11, 0, 30, true);
+
+            //trigger04
+            sphere.actionManager.registerAction(new BABYLON.SetValueAction(
+            { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: tabua11 },
+            sphere, "scaling", new BABYLON.Vector3(2.25, 2.25, 2.25))).then(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function() {power_sound.play()}))
+
+            //------------tabua12----------------------
+            var tabua12 = tabua02.clone("tabua14")
+            tabua12.position.y = -130;
+            tabua12.position.x = 30;
+
+
+            //------------tabua13----------------------
+            var tabua13 = BABYLON.MeshBuilder.CreateBox("tabua13", {height: 1, width: 10});
+            tabua13.scaling.z = 50;
+            tabua13.scaling.x = 0.5;
+            tabua13.position.x = 20;
+            tabua13.position.y = -140;
+            tabua13.rotation.z = 0;
+            tabua13.material = redMaterial;
+
+            //Animação Tabua13
+            const frameRate3 = 10;
+            const xSlide03 = new BABYLON.Animation("xSlide03", "position.x", frameRate3, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const keyFrames3 = []; 
+            keyFrames3.push({
+                frame: 0,
+                value: 30
+            });
+
+            keyFrames3.push({
+                frame: frameRate,
+                value: -30
+            });
+
+            keyFrames3.push({
+                frame: 30 * frameRate,
+                value: 30
+            });
+            xSlide03.setKeys(keyFrames3);
+            tabua13.animations.push(xSlide03);
+            scene.beginAnimation(tabua13, 0, 30 * frameRate, true);
+
+            //trigger05
+            sphere.actionManager.registerAction(new BABYLON.SetValueAction(
+            { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: tabua13 },
+            sphere, "scaling", new BABYLON.Vector3(2.50, 2.50, 2.50))).then(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function() {power_sound.play()}))
+
+            //------------tabua14----------------------
+            var tabua14 = BABYLON.MeshBuilder.CreateBox("tabua14", {height: 1, width: 10});
+            tabua14.scaling.z = 8;
+            tabua14.scaling.x = 5;
+            tabua14.position.x = -8;
+            tabua14.position.y = -150;
+            tabua14.rotation.z = 6;
+            tabua14.material = wood;
+
+            tabua14.physicsImpostor = new BABYLON.PhysicsImpostor(tabua14, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+
+
+
 
 
             return scene;
